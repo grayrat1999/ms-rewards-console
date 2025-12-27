@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>任务进度查询</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  input, select { margin: 5px; }
+  table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  th { background-color: #f0f0f0; }
+</style>
+</head>
+<body>
+
+<h2>任务查询管理</h2>
+
+<div>
+  <label>任务名: <input type="text" id="filterName"></label>
+  <label>任务时间: <input type="text" id="filterTime"></label>
+  <label>完成状态:
+    <select id="filterDone">
+      <option value="">全部</option>
+      <option value="1">完成</option>
+      <option value="0">未完成</option>
+    </select>
+  </label>
+  <button onclick="queryTasks()">查询</button>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>任务名</th>
+      <th>时间</th>
+      <th>进度</th>
+      <th>目标</th>
+      <th>完成状态</th>
+    </tr>
+  </thead>
+  <tbody id="taskTableBody">
+    <tr><td colspan="5">暂无数据</td></tr>
+  </tbody>
+</table>
+
+<script>
+async function queryTasks() {
+  const name = document.getElementById('filterName').value
+  const time = document.getElementById('filterTime').value
+  const done = document.getElementById('filterDone').value
+
+  let url = 'http://localhost:3000/tasks?'
+  if(name) url += `name=${encodeURIComponent(name)}&`
+  if(time) url += `time=${encodeURIComponent(time)}&`
+  if(done) url += `done=${encodeURIComponent(done)}&`
+
+  try {
+    const resp = await fetch(url)
+    const data = await resp.json()
+    const tbody = document.getElementById('taskTableBody')
+    tbody.innerHTML = ''
+
+    if(data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5">暂无数据</td></tr>'
+      return
+    }
+
+    data.forEach(task => {
+      const tr = document.createElement('tr')
+      tr.innerHTML = `
+        <td>${task.name}</td>
+        <td>${task.time}</td>
+        <td>${task.progress}</td>
+        <td>${task.target}</td>
+        <td>${task.done === 1 ? '完成' : '未完成'}</td>
+      `
+      tbody.appendChild(tr)
+    })
+  } catch(err) {
+    alert('查询失败: ' + err)
+  }
+}
+</script>
+
+</body>
+</html>
