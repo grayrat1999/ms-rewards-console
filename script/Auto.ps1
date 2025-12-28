@@ -1,36 +1,44 @@
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $ScriptDir "Common.ps1")
 
-# 获取所有包含 "Profile" 的文件夹
-$profiles = @(Get-ChildItem -Path $WEB_BROWSER_DATA_DIR -Directory | Where-Object { $_.Name -like "Profile*" } | ForEach-Object { $_.Name })
+$excludeProfileNames = @()
+$profileNames = @(Get-ChildItem -Path $WEB_BROWSER_DATA_DIR -Directory | Where-Object { $_.Name -like "Profile*" } | ForEach-Object { $_.Name })
 
-# 要排除的列表
-$exclude_profiles = @("")
-
-# 总耗时
-$duration = 0
-
-for (; $duration -lt $INTERVAL * 10; $duration += $INTERVAL) {
-    for ($i = 0; $i -lt $profiles.Count; $i++) {
-        $item = $profiles[$i]
-        $proxy_server = $PROXY_SERVERS[$i % $PROXY_SERVERS.Count]
-        if ($exclude_profiles -contains $item) {
-            continue
-        }
-        Write-Host "No.$i - $(Get-Date -Format "yyyy-MM-dd HH:mm:ss") - $item - 使用代理[$proxy_server]"
-
-        & $WEB_BROWSER_EXE_PATH `
-            --profile-directory=$item `
-            --proxy-server=$proxy_server `
-            $BING_URL `
-            > /dev/null 2>&1 &
-        
-        # 每个profile在后台运行一段时间后结束, 将时间片让给其他的profile
-        Start-Sleep -Seconds $INTERVAL
-        pkill -f $WEB_BROWSER
+# profile上下文字典
+$profileInfos = @()
+for ($i = 0; $i -lt $profileNames.Count; $i++) {
+    if ($excludeProfileNames -contains $profileNames[$i]) {
+        continue
+    }
+    $profileInfos += [PSCustomObject]@{
+        Number      = $i
+        ProfileName = $profileNames[$i]
+        ProxyServer = $PROXY_SERVERS[$i % $PROXY_SERVERS.Count]
+        CurDuation  = 0
+        MaxDuation  = (30 + (0..10 | Get-Random)) * $INTERVAL
     }
 }
 
+while ($profileInfos) {
+    $profileInfo = $profileInfos | Get-Random
+    $randomDuration = (1..3 | Get-Random) * $INTERVAL
+    $restDuration = $profileInfo.MaxDuation - $profileInfo.CurDuation
+    $duration = [Math]::Min($randomDuration, $restDuration)
 
-pkill -f $WEB_BROWSER
+    if ($duration -gt 0) {
+        Write-Host "$(Get-Date -Format "yyyy-MM-dd HH:mm:ss") - No.$($profileInfo.Number)($($profileInfo.ProfileName)): start, proxy by $($profileInfo.ProxyServer)"
+        & $WEB_BROWSER_EXE_PATH `
+            --profile-directory=$($profileInfo.ProfileName) `
+            --proxy-server=$($profileInfo.ProxyServer) `
+            $BING_URL `
+            > /dev/null 2>&1 &
+        Start-Sleep -Seconds $duration
+        $profileInfo.CurDuation += $duration
+        pkill -f $WEB_BROWSER
+    }
+    else {
+        Write-Host "$(Get-Date -Format "yyyy-MM-dd HH:mm:ss") - No.$($profileInfo.Number)($($profileInfo.ProfileName)): done"
+        $profileInfos = $profileInfos | Where-Object { $_ -ne $profileInfo }
+    }
+}
 Write-Host "所有任务已完成!!"

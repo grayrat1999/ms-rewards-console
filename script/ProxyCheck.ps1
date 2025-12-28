@@ -19,9 +19,9 @@ foreach ($proxy in $PROXY_SERVERS) {
             $Results += [PSCustomObject]@{
                 Proxy   = $proxy
                 Status  = "OK"
-                Message = "HTTP 代理可访问百度"
+                Message = ""
             }
-            Write-Host "  ✔ 可访问百度" -ForegroundColor Green
+            Write-Host "  ✔ 访问通畅" -ForegroundColor Green
         } else {
             $Results += [PSCustomObject]@{
                 Proxy   = $proxy
