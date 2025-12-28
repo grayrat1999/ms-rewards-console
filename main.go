@@ -14,26 +14,36 @@ import (
 // ---------- 数据结构 ----------
 
 type Task struct {
-	Number   int    `json:"number"`
-	Name     string `json:"name"`
-	Time     string `json:"time"` // yyyyMMdd
-	Progress int    `json:"progress"`
-	Target   int    `json:"target"`
-	Done     int    `json:"done"` // 1 完成, 0 未完成
+	Number int `json:"number"`
+	// 任务名称
+	Name string `json:"name"`
+	// 任务时间, 格式: yyyyMMdd
+	Time string `json:"time"`
+	// 任务进度
+	Progress int `json:"progress"`
+	// 任务目标
+	Target int `json:"target"`
+	// 1 完成, 0 未完成
+	Done int `json:"done"`
 }
 type MetaData struct {
+	// 最大执行次数
 	MaxExecCount int `json:"max_exec_count"`
+	// 最大暂停时间, 单位: s
+	MaxPauseTime int `json:"max_pause_time"`
 }
 
 var (
 	meta = MetaData{
-		MaxExecCount: 30, // 默认值
+		MaxExecCount: 30,
+		MaxPauseTime: 60,
 	}
-	// 使用 map 保存任务，key = name + "_" + time
+	// 使用 map 保存任务，key格式: name + "_" + time
 	taskMap = make(map[string]Task)
-	mu      sync.RWMutex
-
-	dateLayout = "20060102" // 日期格式变量
+	// 互斥锁
+	mu sync.RWMutex
+	// 日期格式变量
+	dateLayout = "20060102"
 )
 
 // ---------- 工具函数 ----------
