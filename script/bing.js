@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Microsoft Bing Rewards每日任务脚本自动执行版
-// @version      V3.3
+// @version      V3.3.1
 // @description  自动完成微软Rewards每日搜索任务,每次运行时获取抖音/微博/哔哩哔哩/百度/头条热门词,避免使用同样的搜索词被封号。
 // @note         更新于 2025年12月27日
 // @author       grayrat
@@ -144,7 +144,7 @@ function exec() {
 
   // 检查计数器的值，若为空则设置为超过最大搜索次数
   if (GM_getValue("Cnt") == null) {
-    GM_setValue("Cnt", max_rewards + 10);
+    setCnt(max_rewards + 10);
   }
   // 随机暂停时间
   let randomDelay =
@@ -158,11 +158,7 @@ function exec() {
     smoothScrollToBottom();
     setTimeout(() => {
       search();
-      GM_setValue("Cnt", currentSearchCount + 1);
-      GM_setValue(today, currentSearchCount + 1);
-
-      console.log("Cnt: " + GM_getValue("Cnt"));
-      console.log("today:" + GM_getValue(today));
+      setCnt(currentSearchCount + 1);
     }, randomDelay);
   }
 
@@ -180,9 +176,9 @@ function exec() {
 
 // 注册菜单命令：开始
 const menu1 = GM_registerMenuCommand(
-  "开始",
+  "重跑",
   () => {
-    GM_setValue("Cnt", 0);
+    setCnt(0);
     location.href = "https://www.bing.com/?br_msg=Please-Wait";
   },
   "o"
@@ -190,12 +186,18 @@ const menu1 = GM_registerMenuCommand(
 
 // 注册菜单命令：停止
 const menu2 = GM_registerMenuCommand(
-  "停止",
+  "终止",
   () => {
-    GM_setValue("Cnt", max_rewards + 10);
+    setCnt(max_rewards + 10);
   },
   "o"
 );
+
+function setCnt(cnt) {
+  GM_setValue("Cnt", cnt);
+  GM_setValue(today, cnt);
+  console.log("Cnt: " + GM_getValue("Cnt"));
+}
 
 // 自动将字符串中的字符进行替换
 function AutoStrTrans(st) {
