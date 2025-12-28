@@ -7,23 +7,30 @@ $profiles = @(Get-ChildItem -Path $WEB_BROWSER_DATA_DIR -Directory | Where-Objec
 # 要排除的列表
 $exclude_profiles = @("")
 
-for ($i = 0; $i -lt $profiles.Count; $i++) {
-    $item = $profiles[$i]
-    $proxy_server = $PROXY_SERVERS[$i % $PROXY_SERVERS.Count]
-    if ($exclude_profiles -contains $item) {
-        continue
+# 总耗时
+$duration = 0
+
+for (; $duration -lt $INTERVAL * 10; $duration += $INTERVAL) {
+    for ($i = 0; $i -lt $profiles.Count; $i++) {
+        $item = $profiles[$i]
+        $proxy_server = $PROXY_SERVERS[$i % $PROXY_SERVERS.Count]
+        if ($exclude_profiles -contains $item) {
+            continue
+        }
+        Write-Host "No.$i - $(Get-Date -Format "yyyy-MM-dd HH:mm:ss") - $item - 使用代理[$proxy_server]"
+
+        & $WEB_BROWSER_EXE_PATH `
+            --profile-directory=$item `
+            --proxy-server=$proxy_server `
+            $BING_URL `
+            > /dev/null 2>&1 &
+        
+        # 每个profile在后台运行一段时间后结束, 将时间片让给其他的profile
+        Start-Sleep -Seconds $INTERVAL
+        pkill -f $WEB_BROWSER
     }
-    Write-Host "No.$i $(Get-Date -Format "yyyy-MM-dd HH:mm:ss") - $item - 使用代理[$proxy_server]"
-
-    & $WEB_BROWSER_EXE_PATH `
-    --profile-directory=$item `
-    --proxy-server=$proxy_server `
-    $BING_URL `
-    > /dev/null 2>&1 &
-
-    Start-Sleep -Seconds 1200
-    pkill -f $WEB_BROWSER
 }
+
 
 pkill -f $WEB_BROWSER
 Write-Host "所有任务已完成!!"

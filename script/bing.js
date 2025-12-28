@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Microsoft Bing Rewards每日任务脚本自动执行版
-// @version      V3.2.6
+// @version      V3.3
 // @description  自动完成微软Rewards每日搜索任务,每次运行时获取抖音/微博/哔哩哔哩/百度/头条热门词,避免使用同样的搜索词被封号。
 // @note         更新于 2025年12月27日
 // @author       grayrat
@@ -22,9 +22,12 @@
 // @updateURL    https://greasyfork.org/zh-CN/scripts/560495-microsoft-bing-rewards%E6%AF%8F%E6%97%A5%E4%BB%BB%E5%8A%A1%E8%84%9A%E6%9C%AC%E8%87%AA%E5%8A%A8%E6%89%A7%E8%A1%8C%E7%89%88.user.js
 // ==/UserScript==
 
+const server_url = "http://www.powerscheduler.tech:3000";
 // 重复执行的次数
 var max_rewards = 30;
-// 每执行一定次数的搜索后插入暂停时间, 解决账号被监控不增加积分的问题
+// 最小暂停时间
+var min_pause_time = 20 * 1000;
+// 最大暂停时间
 var max_pause_time = 60 * 1000;
 // 故梦热门词API接口网站
 const Hot_words_apis = "https://api.gmya.net/Api/";
@@ -138,12 +141,15 @@ async function fetchHotList() {
 
 function exec() {
   ("use strict");
-  // 生成15秒到30秒之间的随机延迟时间
-  let randomDelay = Math.floor(Math.random() * 15000) + 15000;
+
   // 检查计数器的值，若为空则设置为超过最大搜索次数
   if (GM_getValue("Cnt") == null) {
     GM_setValue("Cnt", max_rewards + 10);
   }
+  // 随机暂停时间
+  let randomDelay =
+    Math.floor(Math.random() * min_pause_time) +
+    (max_pause_time - min_pause_time);
 
   let currentSearchCount = GM_getValue("Cnt");
   if (currentSearchCount < max_rewards) {
@@ -151,12 +157,7 @@ function exec() {
     tt.innerHTML = `[${currentSearchCount}/${max_rewards}] ${tt.innerHTML}`;
     smoothScrollToBottom();
     setTimeout(() => {
-      // 检查是否需要暂停
-      if ((currentSearchCount + 1) % 5 === 0) {
-        setTimeout(search, Math.floor(Math.random() * max_pause_time));
-      } else {
-        search();
-      }
+      search();
       GM_setValue("Cnt", currentSearchCount + 1);
       GM_setValue(today, currentSearchCount + 1);
 

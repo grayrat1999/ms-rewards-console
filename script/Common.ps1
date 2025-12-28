@@ -20,3 +20,6 @@ $WEB_BROWSER_EXE_PATH = "/Applications/${WEB_BROWSER}.app/Contents/MacOS/$WEB_BR
 
 # BING地址
 $BING_URL = "https://www.bing.com"
+
+# 单个profile的执行周期
+$INTERVAL = 60 * 4
