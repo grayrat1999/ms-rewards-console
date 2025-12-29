@@ -2,18 +2,24 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $ScriptDir "Common.ps1")
 
 $excludeProfileNames = @()
+$excludeProxyServer = @("183.232.248.73:7890", "210.16.160.222:7890")
 $profileNames = @(Get-ChildItem -Path $WEB_BROWSER_DATA_DIR -Directory | Where-Object { $_.Name -like "Profile*" } | ForEach-Object { $_.Name })
 
 # profile上下文字典
 $profileInfos = @()
 for ($i = 0; $i -lt $profileNames.Count; $i++) {
-    if ($excludeProfileNames -contains $profileNames[$i]) {
+    $profileName = $profileNames[$i]
+    $proxyServer = $PROXY_SERVERS[$i % $PROXY_SERVERS.Count]
+    if ($excludeProfileNames -contains $profileName) {
+        continue
+    }
+    if ($excludeProxyServer -contains $proxyServer) {
         continue
     }
     $profileInfos += [PSCustomObject]@{
         Number      = $i
         ProfileName = $profileNames[$i]
-        ProxyServer = $PROXY_SERVERS[$i % $PROXY_SERVERS.Count]
+        ProxyServer = $proxyServer
         CurDuation  = 0
         MaxDuation  = (30 + (0..10 | Get-Random)) * $INTERVAL
     }
