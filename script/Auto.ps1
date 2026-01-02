@@ -1,8 +1,8 @@
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $ScriptDir "Common.ps1")
+. (Join-Path $ScriptDir "ProxyCheck.ps1")
 
 $excludeProfileNames = @()
-$excludeProxyServer = @("183.232.248.73:7890", "210.16.160.222:7890")
 $profileNames = @(Get-ChildItem -Path $WEB_BROWSER_DATA_DIR -Directory | Where-Object { $_.Name -like "Profile*" } | ForEach-Object { $_.Name })
 
 # profile上下文字典
@@ -11,9 +11,6 @@ for ($i = 0; $i -lt $profileNames.Count; $i++) {
     $profileName = $profileNames[$i]
     $proxyServer = $PROXY_SERVERS[$i % $PROXY_SERVERS.Count]
     if ($excludeProfileNames -contains $profileName) {
-        continue
-    }
-    if ($excludeProxyServer -contains $proxyServer) {
         continue
     }
     $profileInfos += [PSCustomObject]@{
@@ -30,6 +27,11 @@ while ($profileInfos) {
     $randomDuration = (1..3 | Get-Random) * $INTERVAL
     $restDuration = $profileInfo.MaxDuation - $profileInfo.CurDuation
     $duration = [Math]::Min($randomDuration, $restDuration)
+
+    $checkResult = CheckProxyServer -ProxyServerUrl $profileInfo.ProxyServer
+    if ($checkResult.Status -eq 'FAIL') {
+        continue
+    }
 
     if ($duration -gt 0) {
         Write-Host "$(Get-Date -Format "yyyy-MM-dd HH:mm:ss") - No.$($profileInfo.Number)($($profileInfo.ProfileName)): start, proxy by $($profileInfo.ProxyServer)"
