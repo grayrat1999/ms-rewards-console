@@ -28,9 +28,11 @@ while ($profileInfos) {
     $restDuration = $profileInfo.MaxDuation - $profileInfo.CurDuation
     $duration = [Math]::Min($randomDuration, $restDuration)
 
-    $checkResult = CheckProxyServer -ProxyServerUrl $profileInfo.ProxyServer
-    if ($checkResult.Status -eq 'FAIL') {
-        continue
+    if($profileInfo.ProxyServer -ne ''){
+        $checkResult = CheckProxyServer -ProxyServerUrl $profileInfo.ProxyServer
+        if ($checkResult.Status -eq 'FAIL') {
+            continue
+        }
     }
 
     if ($duration -gt 0) {
